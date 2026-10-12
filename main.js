@@ -128,9 +128,23 @@ const coverBack = new THREE.Mesh(cover.geometry, coverMat); coverBack.position.c
 const hingeRod = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, H, 16), glass);
 hingeRod.position.set(-W / 2, 0, 0.15); caseGroup.add(hingeRod);
 
+// 光速旋转的拖影层：同心彩虹光环
+const streakTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 512; const g = c.getContext('2d');
+  for (let r = 40; r < 256; r += 2) {
+    g.strokeStyle = `hsla(${(r * 7) % 360},100%,75%,${0.15 + Math.random() * 0.5})`;
+    g.lineWidth = 1 + Math.random() * 2; g.beginPath(); g.arc(256, 256, r, 0, 7); g.stroke();
+  }
+  return new THREE.CanvasTexture(c);
+})();
+const streakMat = new THREE.MeshBasicMaterial({ map: streakTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+const streak = new THREE.Mesh(new THREE.CircleGeometry(R, 96), streakMat); streak.position.z = 0.01; disc.add(streak);
+const streakBack = new THREE.Mesh(new THREE.CircleGeometry(R, 96), streakMat); streakBack.rotation.y = Math.PI; streakBack.position.z = -0.01; disc.add(streakBack);
+
 caseGroup.rotation.set(0.15, -0.5, 0);
 
 // ---------- 交互 ----------
+let discBase = 6 * 0.4 / 0.4, warp = false;
 let open = false, lidAngle = 0, spinOn = true, speed = 0.3, discSpeed = 0;
 $('lid').onclick = () => { open = !open; $('lid').textContent = open ? '关上盒盖' : '打开盒盖'; };
 $('spin').onchange = e => spinOn = e.target.checked;
@@ -141,6 +155,8 @@ $('trans').oninput = e => {
   glass.transmission = v; glass.roughness = (1 - v) * 0.2;
   glass.specularIntensity = 0.35 + (1 - v) * 0.6;
 };
+$('discSpeed').oninput = e => discBase = e.target.value / 100 * 15;
+$('warp').onchange = e => { warp = e.target.checked; if (warp && !open) $('lid').click(); };
 $('toggle').onclick = () => $('panel').classList.toggle('hide');
 if (innerWidth < 640) $('panel').classList.add('hide');
 
@@ -174,6 +190,7 @@ addEventListener('resize', () => {
 });
 
 const params = new URLSearchParams(location.search);
+if (params.has('warp')) { warp = true; $('warp').checked = true; }
 if (params.has('open')) { open = true; $('lid').textContent = '关上盒盖'; }
 
 const clock = new THREE.Clock();
@@ -186,9 +203,14 @@ function loop() {
   hinge.rotation.y = lidAngle;
   // 光盘：打开时升起并加速旋转
   const openK = lidAngle / (-Math.PI * 0.62);
-  discSpeed += ((open ? 6 : 0) - discSpeed) * Math.min(1, dt * 1.5);
+  const discTarget = open ? (warp ? 90 : discBase) : 0;
+  discSpeed += (discTarget - discSpeed) * Math.min(1, dt * (warp ? 0.8 : 1.5));
+  const blur = THREE.MathUtils.clamp((discSpeed - 12) / 50, 0, 1);
+  streakMat.opacity = blur * 0.9; streak.rotation.z = Math.random() * 6.28;
+  labelMat.opacity = 1 - blur * 0.6; labelMat.transparent = blur > 0;
+  dm.rainbow.iridescenceThicknessRange[1] = 900 + Math.sin(t * 30) * 300 * blur;
   disc.rotation.z -= discSpeed * dt;
-  disc.position.z = -0.05 + openK * 0.35;
+  disc.position.z = -0.05 + openK * 0.35 + (blur ? (Math.random() - .5) * 0.01 * blur : 0);
   bg.rotation.z = t * 0.1;
   controls.update();
   renderer.render(scene, camera);
