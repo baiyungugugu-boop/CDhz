@@ -55,10 +55,9 @@ function defaultArt(seed = 1) {
 // ---------- 尺寸（单位≈cm/1.2）----------
 const W = 1.42 * 2, H = 1.25 * 2, T = 0.1;   // 盒子宽高、单片厚度
 const glass = new THREE.MeshPhysicalMaterial({
-  color: 0xdfefff, transmission: 0.9, roughness: 0.04, metalness: 0, ior: 1.5,
-  thickness: 0.35, clearcoat: 1, clearcoatRoughness: 0.03, specularIntensity: 1,
-  transparent: true, opacity: 1, side: THREE.DoubleSide, envMapIntensity: 1.2,
-  attenuationColor: new THREE.Color(0xdfefff), attenuationDistance: 3,
+  color: 0xffffff, transmission: 1, roughness: 0, metalness: 0, ior: 1.5,
+  thickness: 0.05, clearcoat: 0.3, clearcoatRoughness: 0, specularIntensity: 0.35,
+  transparent: true, opacity: 1, side: THREE.FrontSide, envMapIntensity: 0.6,
 });
 function box(w, h, d) {
   const geo = new THREE.BoxGeometry(w, h, d);
@@ -121,9 +120,10 @@ const lidPlate = box(W, H, T); lidPlate.position.set(W / 2, 0, 0); lid.add(lidPl
 const lidTab = box(W - 0.3, T * .6, 0.12); lidTab.position.set(W / 2, H / 2 - 0.06, -0.08); lid.add(lidTab);
 const lidTab2 = lidTab.clone(); lidTab2.position.y = -H / 2 + 0.06; lid.add(lidTab2);
 // 封面册（插在盖子内侧）
-const coverMat = new THREE.MeshPhysicalMaterial({ map: defaultArt(3), roughness: .6, side: THREE.DoubleSide });
+const coverMat = new THREE.MeshPhysicalMaterial({ map: defaultArt(3), roughness: .6 });
 const cover = new THREE.Mesh(new THREE.PlaneGeometry(W - 0.2, H - 0.12), coverMat);
 cover.position.set(W / 2 - 0.02, 0, -T / 2 - 0.012); cover.rotation.y = 0; lid.add(cover);
+const coverBack = new THREE.Mesh(cover.geometry, coverMat); coverBack.position.copy(cover.position); coverBack.position.z -= 0.002; coverBack.rotation.y = Math.PI; lid.add(coverBack);
 // 铰链圆柱
 const hingeRod = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, H, 16), glass);
 hingeRod.position.set(-W / 2, 0, 0.15); caseGroup.add(hingeRod);
@@ -135,11 +135,11 @@ let open = false, lidAngle = 0, spinOn = true, speed = 0.3, discSpeed = 0;
 $('lid').onclick = () => { open = !open; $('lid').textContent = open ? '关上盒盖' : '打开盒盖'; };
 $('spin').onchange = e => spinOn = e.target.checked;
 $('speed').oninput = e => speed = e.target.value / 100;
-$('color').oninput = e => { glass.color.set(e.target.value); glass.attenuationColor.set(e.target.value); };
+$('color').oninput = e => { glass.color.set(e.target.value); };
 $('trans').oninput = e => {
   const v = e.target.value / 100; $('tv').textContent = e.target.value + '%';
-  glass.transmission = v; glass.opacity = 0.55 + 0.45 * (1 - v) + 0.45 * v * 0.9;
-  glass.roughness = 0.04 + (1 - v) * 0.25;
+  glass.transmission = v; glass.roughness = (1 - v) * 0.2;
+  glass.specularIntensity = 0.35 + (1 - v) * 0.6;
 };
 $('toggle').onclick = () => $('panel').classList.toggle('hide');
 if (innerWidth < 640) $('panel').classList.add('hide');
