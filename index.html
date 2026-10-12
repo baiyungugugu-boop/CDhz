@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>透明 CD 盒 · CDhz</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage"></div>
+<button id="toggle" class="fab" aria-label="设置">⚙︎</button>
+<aside id="panel">
+  <h1>透明 CD 盒</h1>
+  <label class="file">封面照片<input type="file" id="coverFile" accept="image/*"></label>
+  <label class="file">光盘图案（可选）<input type="file" id="discFile" accept="image/*"></label>
+  <label class="row"><input type="checkbox" id="sameImg" checked> 光盘使用封面图</label>
+  <label>外壳颜色 <input type="color" id="color" value="#dfefff"></label>
+  <label>透明度 <span id="tv">90%</span><input type="range" id="trans" min="0" max="100" value="90"></label>
+  <label class="row"><input type="checkbox" id="spin" checked> 自动旋转</label>
+  <label>旋转速度 <input type="range" id="speed" min="0" max="100" value="30"></label>
+  <div class="btns">
+    <button id="lid">打开盒盖</button>
+    <button id="shot">保存截图</button>
+    <button id="reset">重置封面</button>
+  </div>
+  <p class="tip">拖动旋转 · 滚轮/双指缩放</p>
+</aside>
+<script type="module" src="main.js"></script>
+</body>
+</html>
